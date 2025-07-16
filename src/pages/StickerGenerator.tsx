@@ -3,7 +3,7 @@ import { ImageUpload } from '@/components/ImageUpload';
 import { StyleSelector } from '@/components/StyleSelector';
 import { QuantitySelector } from '@/components/QuantitySelector';
 import { StickerPreview } from '@/components/StickerPreview';
-import { PricingPlans } from '@/components/PricingPlans';
+import { PricingCalculator } from '@/components/PricingPlans';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -18,7 +18,7 @@ interface GenerationState {
   stickerPack: string[];
   isGenerating: boolean;
   currentStep: number;
-  selectedPlan: string;
+  pricingAccepted: boolean;
 }
 
 export const StickerGenerator: React.FC = () => {
@@ -30,38 +30,25 @@ export const StickerGenerator: React.FC = () => {
     stickerPack: [],
     isGenerating: false,
     currentStep: 1,
-    selectedPlan: 'basic',
+    pricingAccepted: false,
   });
 
   const steps = [
-    { number: 1, title: 'Choose Plan', description: 'Select your pricing tier' },
-    { number: 2, title: 'Upload Photo', description: 'Add your beautiful selfie' },
-    { number: 3, title: 'Choose Style', description: 'Pick your favorite look' },
-    { number: 4, title: 'Select Quantity', description: 'How many stickers?' },
+    { number: 1, title: 'Upload Photo', description: 'Add your beautiful selfie' },
+    { number: 2, title: 'Choose Style', description: 'Pick your favorite look' },
+    { number: 3, title: 'Select Quantity', description: 'How many stickers?' },
+    { number: 4, title: 'Review & Pay', description: 'Confirm pricing & payment' },
     { number: 5, title: 'Generate & Download', description: 'Get your stickers!' },
   ];
 
   const progress = ((state.currentStep - 1) / (steps.length - 1)) * 100;
-
-  const handlePlanSelect = (planId: string) => {
-    setState(prev => ({
-      ...prev,
-      selectedPlan: planId,
-      currentStep: Math.max(prev.currentStep, 2)
-    }));
-    
-    toast({
-      title: "Plan selected! 🎯",
-      description: `You chose the ${planId} plan. Now upload your photo!`,
-    });
-  };
 
   const handleImageUpload = (file: File) => {
     const url = URL.createObjectURL(file);
     setState(prev => ({
       ...prev,
       uploadedImage: url,
-      currentStep: Math.max(prev.currentStep, 3)
+      currentStep: Math.max(prev.currentStep, 2)
     }));
     
     toast({
@@ -77,8 +64,9 @@ export const StickerGenerator: React.FC = () => {
     setState(prev => ({
       ...prev,
       uploadedImage: null,
-      currentStep: 2,
-      stickerPack: []
+      currentStep: 1,
+      stickerPack: [],
+      pricingAccepted: false
     }));
   };
 
@@ -86,7 +74,8 @@ export const StickerGenerator: React.FC = () => {
     setState(prev => ({
       ...prev,
       selectedStyle: styleId,
-      currentStep: Math.max(prev.currentStep, 4)
+      currentStep: Math.max(prev.currentStep, 3),
+      pricingAccepted: false
     }));
   };
 
@@ -94,15 +83,37 @@ export const StickerGenerator: React.FC = () => {
     setState(prev => ({
       ...prev,
       selectedQuantity: quantity,
-      currentStep: Math.max(prev.currentStep, 5)
+      currentStep: Math.max(prev.currentStep, 4),
+      pricingAccepted: false
     }));
   };
 
+  const handleAcceptPricing = () => {
+    setState(prev => ({
+      ...prev,
+      pricingAccepted: true,
+      currentStep: Math.max(prev.currentStep, 5)
+    }));
+    
+    toast({
+      title: "Pricing accepted! 💳",
+      description: "Redirecting to secure payment...",
+    });
+
+    // TODO: Here you would integrate with Stripe for payment
+    // For now, we'll simulate payment success after a delay
+    setTimeout(() => {
+      toast({
+        title: "Payment successful! ✅",
+        description: "You can now generate your stickers!",
+      });
+    }, 2000);
+  };
   const handleGenerateStickers = async () => {
-    if (!state.uploadedImage || !state.selectedStyle) {
+    if (!state.uploadedImage || !state.selectedStyle || !state.pricingAccepted) {
       toast({
         title: "Missing information",
-        description: "Please upload an image and select a style first!",
+        description: "Please complete all steps including payment!",
         variant: "destructive",
       });
       return;
@@ -158,10 +169,10 @@ export const StickerGenerator: React.FC = () => {
 
   const canProceedToNextStep = () => {
     switch (state.currentStep) {
-      case 1: return !!state.selectedPlan;
-      case 2: return !!state.uploadedImage;
-      case 3: return !!state.selectedStyle;
-      case 4: return state.selectedQuantity > 0;
+      case 1: return !!state.uploadedImage;
+      case 2: return !!state.selectedStyle;
+      case 3: return state.selectedQuantity > 0;
+      case 4: return state.pricingAccepted;
       default: return true;
     }
   };
@@ -237,24 +248,11 @@ export const StickerGenerator: React.FC = () => {
 
         {/* Main Content */}
         <div className="space-y-8">
-          {/* Step 1: Plan Selection */}
+          {/* Step 1: Image Upload */}
           {state.currentStep >= 1 && (
             <Card className="p-6">
               <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-primary bg-clip-text text-transparent">
-                Step 1: Choose Your Plan
-              </h2>
-              <PricingPlans
-                selectedPlan={state.selectedPlan}
-                onSelectPlan={handlePlanSelect}
-              />
-            </Card>
-          )}
-
-          {/* Step 2: Image Upload */}
-          {state.currentStep >= 2 && (
-            <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-primary bg-clip-text text-transparent">
-                Step 2: Upload Your Photo
+                Step 1: Upload Your Photo
               </h2>
               <ImageUpload
                 onImageUpload={handleImageUpload}
@@ -264,8 +262,8 @@ export const StickerGenerator: React.FC = () => {
             </Card>
           )}
 
-          {/* Step 3: Style Selection */}
-          {state.currentStep >= 3 && state.uploadedImage && (
+          {/* Step 2: Style Selection */}
+          {state.currentStep >= 2 && state.uploadedImage && (
             <Card className="p-6">
               <StyleSelector
                 selectedStyle={state.selectedStyle}
@@ -274,8 +272,8 @@ export const StickerGenerator: React.FC = () => {
             </Card>
           )}
 
-          {/* Step 4: Quantity Selection */}
-          {state.currentStep >= 4 && state.selectedStyle && (
+          {/* Step 3: Quantity Selection */}
+          {state.currentStep >= 3 && state.selectedStyle && (
             <Card className="p-6">
               <QuantitySelector
                 selectedQuantity={state.selectedQuantity}
@@ -284,16 +282,27 @@ export const StickerGenerator: React.FC = () => {
             </Card>
           )}
 
+          {/* Step 4: Pricing & Payment */}
+          {state.currentStep >= 4 && state.selectedStyle && state.selectedQuantity && (
+            <Card className="p-6">
+              <PricingCalculator
+                selectedStyle={state.selectedStyle}
+                selectedQuantity={state.selectedQuantity}
+                onAcceptPricing={handleAcceptPricing}
+              />
+            </Card>
+          )}
+
           {/* Step 5: Generation & Preview */}
-          {state.currentStep >= 5 && (
+          {state.currentStep >= 5 && state.pricingAccepted && (
             <Card className="p-6">
               {state.stickerPack.length === 0 && !state.isGenerating && (
                 <div className="text-center space-y-6">
                   <h2 className="text-2xl font-bold bg-gradient-cute bg-clip-text text-transparent">
-                    Ready to Create Magic? ✨
+                    Payment Confirmed! Ready to Generate? ✨
                   </h2>
                   <p className="text-muted-foreground max-w-md mx-auto">
-                    You're all set! Click the button below to generate your {state.selectedQuantity} amazing {state.selectedStyle} stickers.
+                    Your payment has been processed. Click below to generate your {state.selectedQuantity} amazing {state.selectedStyle} stickers.
                   </p>
                   <Button
                     variant="cute"
