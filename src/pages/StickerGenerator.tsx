@@ -57,6 +57,19 @@ export const StickerGenerator: React.FC = () => {
     });
   };
 
+  const handleImageUrl = (url: string) => {
+    setState(prev => ({
+      ...prev,
+      uploadedImage: url,
+      currentStep: Math.max(prev.currentStep, 2)
+    }));
+    
+    toast({
+      title: "Image loaded! ✨",
+      description: "Your image looks perfect for sticker creation!",
+    });
+  };
+
   const handleRemoveImage = () => {
     if (state.uploadedImage) {
       URL.revokeObjectURL(state.uploadedImage);
@@ -256,6 +269,7 @@ export const StickerGenerator: React.FC = () => {
               </h2>
               <ImageUpload
                 onImageUpload={handleImageUpload}
+                onImageUrl={handleImageUrl}
                 uploadedImage={state.uploadedImage || undefined}
                 onRemoveImage={handleRemoveImage}
               />
