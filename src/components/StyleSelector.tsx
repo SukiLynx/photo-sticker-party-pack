@@ -3,7 +3,9 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Wand2, Sparkles, Lightbulb } from 'lucide-react';
+import { Wand2, Sparkles, Lightbulb, Brain, Loader2 } from 'lucide-react';
+import { improvePrompt, generateRandomPrompt } from '@/services/promptAI';
+import { useToast } from '@/hooks/use-toast';
 
 interface StyleSelectorProps {
   customPrompt: string;
@@ -24,15 +26,49 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({
   onPromptChange,
 }) => {
   const [currentExample, setCurrentExample] = useState(0);
+  const [isImproving, setIsImproving] = useState(false);
+  const { toast } = useToast();
 
   const handleExampleClick = (example: string) => {
     onPromptChange(example);
   };
 
   const handleRandomExample = () => {
-    const randomIndex = Math.floor(Math.random() * promptExamples.length);
-    setCurrentExample(randomIndex);
-    onPromptChange(promptExamples[randomIndex]);
+    const randomPrompt = generateRandomPrompt();
+    onPromptChange(randomPrompt);
+    toast({
+      title: "Random idea generated! ✨",
+      description: "Try this creative style suggestion",
+    });
+  };
+
+  const handleImprovePrompt = async () => {
+    if (!customPrompt.trim()) {
+      toast({
+        title: "No prompt to improve",
+        description: "Please write something first, then I can help make it better!",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsImproving(true);
+    try {
+      const improvedPrompt = await improvePrompt(customPrompt);
+      onPromptChange(improvedPrompt);
+      toast({
+        title: "Prompt improved! 🚀",
+        description: "Your style description has been enhanced with AI",
+      });
+    } catch (error) {
+      toast({
+        title: "Improvement failed",
+        description: "Try again or use the example prompts for inspiration",
+        variant: "destructive"
+      });
+    } finally {
+      setIsImproving(false);
+    }
   };
 
   return (
@@ -64,15 +100,31 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({
             <p className="text-sm text-muted-foreground">
               {customPrompt.length}/500 characters
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRandomExample}
-              className="flex items-center space-x-1"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>Random Idea</span>
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleImprovePrompt}
+                disabled={isImproving || !customPrompt.trim()}
+                className="flex items-center space-x-1"
+              >
+                {isImproving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Brain className="h-4 w-4" />
+                )}
+                <span>{isImproving ? 'Improving...' : 'AI Improve'}</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRandomExample}
+                className="flex items-center space-x-1"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Random Idea</span>
+              </Button>
+            </div>
           </div>
         </div>
       </Card>
