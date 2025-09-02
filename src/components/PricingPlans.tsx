@@ -5,17 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Calculator, Sparkles } from 'lucide-react';
 
 interface PricingCalculatorProps {
-  selectedStyle: string;
+  customPrompt: string;
   selectedQuantity: number;
   onAcceptPricing: () => void;
 }
-
-const stylePricing = {
-  'kawaii': { name: 'Kawaii Cute', basePrice: 0.10, multiplier: 1.0 },
-  'chibi': { name: 'Chibi', basePrice: 0.10, multiplier: 1.5 },
-  'emoji': { name: 'Emoji Expression', basePrice: 0.10, multiplier: 1.2 },
-  'magical': { name: 'Magical Girl', basePrice: 0.10, multiplier: 2.0 }
-};
 
 const quantityPricing = {
   4: { multiplier: 1.0, label: '4 stickers' },
@@ -25,37 +18,30 @@ const quantityPricing = {
 };
 
 export const PricingCalculator: React.FC<PricingCalculatorProps> = ({ 
-  selectedStyle,
+  customPrompt,
   selectedQuantity,
   onAcceptPricing
 }) => {
-  const styleInfo = stylePricing[selectedStyle as keyof typeof stylePricing];
   const quantityInfo = quantityPricing[selectedQuantity as keyof typeof quantityPricing];
   
-  if (!styleInfo || !quantityInfo) {
+  if (!quantityInfo || !customPrompt.trim()) {
     return null;
   }
 
-  const basePrice = styleInfo.basePrice;
-  const styleMultiplier = styleInfo.multiplier;
+  const basePrice = 0.15; // Fixed base price for custom prompts
   const quantityMultiplier = quantityInfo.multiplier;
-  const finalPrice = basePrice * styleMultiplier * quantityMultiplier;
+  const finalPrice = basePrice * quantityMultiplier;
 
   const breakdown = [
     {
       item: 'Base generation',
       price: basePrice,
-      description: 'Starting price for any sticker generation'
-    },
-    {
-      item: `${styleInfo.name} style`,
-      price: basePrice * (styleMultiplier - 1),
-      description: `${Math.round((styleMultiplier - 1) * 100)}% style premium`
+      description: 'Custom AI style generation'
     },
     {
       item: quantityInfo.label,
-      price: basePrice * styleMultiplier * (quantityMultiplier - 1),
-      description: `${Math.round((quantityMultiplier - 1) * 100)}% quantity premium`
+      price: basePrice * (quantityMultiplier - 1),
+      description: `${Math.round((quantityMultiplier - 1) * 100)}% quantity scaling`
     }
   ];
 
@@ -106,7 +92,7 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
           <div className="space-y-2 pt-2">
             <div className="flex items-start space-x-2">
               <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-              <span className="text-sm">High-quality {styleInfo.name} style stickers</span>
+              <span className="text-sm">Custom AI-generated style stickers</span>
             </div>
             <div className="flex items-start space-x-2">
               <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />

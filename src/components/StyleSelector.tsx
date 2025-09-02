@@ -1,121 +1,101 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Star, Smile, Sparkles } from 'lucide-react';
-
-export interface StickerStyle {
-  id: string;
-  name: string;
-  description: string;
-  icon: React.ReactNode;
-  preview: string;
-  popular?: boolean;
-}
+import { Textarea } from '@/components/ui/textarea';
+import { Wand2, Sparkles, Lightbulb } from 'lucide-react';
 
 interface StyleSelectorProps {
-  selectedStyle: string;
-  onStyleSelect: (styleId: string) => void;
+  customPrompt: string;
+  onPromptChange: (prompt: string) => void;
 }
 
-const stickerStyles: StickerStyle[] = [
-  {
-    id: 'kawaii',
-    name: 'Kawaii Cute',
-    description: 'Adorable anime-style with big eyes and sweet expressions',
-    icon: <Heart className="h-5 w-5" />,
-    preview: '(◕‿◕)♡',
-    popular: true,
-  },
-  {
-    id: 'chibi',
-    name: 'Chibi Style',
-    description: 'Super deformed cute characters with exaggerated features',
-    icon: <Star className="h-5 w-5" />,
-    preview: '(´｡• ᵕ •｡`)',
-  },
-  {
-    id: 'emoji',
-    name: 'Emoji Expression',
-    description: 'Fun and expressive emoji-style reactions',
-    icon: <Smile className="h-5 w-5" />,
-    preview: '(≧∇≦)/',
-    popular: true,
-  },
-  {
-    id: 'magical',
-    name: 'Magical Girl',
-    description: 'Sparkly and dreamy with magical elements',
-    icon: <Sparkles className="h-5 w-5" />,
-    preview: '✨(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧',
-  },
+const promptExamples = [
+  "Kawaii anime style with big sparkly eyes and pastel colors",
+  "Realistic portrait with soft lighting and natural colors",
+  "Cartoon style with bold outlines and vibrant colors",
+  "Minimalist line art with simple geometric shapes",
+  "Watercolor painting style with soft edges and flowing colors",
+  "Pixel art retro gaming style with 8-bit aesthetics"
 ];
 
 export const StyleSelector: React.FC<StyleSelectorProps> = ({
-  selectedStyle,
-  onStyleSelect,
+  customPrompt,
+  onPromptChange,
 }) => {
+  const [currentExample, setCurrentExample] = useState(0);
+
+  const handleExampleClick = (example: string) => {
+    onPromptChange(example);
+  };
+
+  const handleRandomExample = () => {
+    const randomIndex = Math.floor(Math.random() * promptExamples.length);
+    setCurrentExample(randomIndex);
+    onPromptChange(promptExamples[randomIndex]);
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-          Choose Your Style
+          Describe Your Style
         </h2>
         <p className="text-muted-foreground">
-          Pick the perfect style for your sticker pack
+          Tell us how you want your stickers to look
         </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {stickerStyles.map((style) => (
-          <Card
-            key={style.id}
-            className={`
-              relative p-6 cursor-pointer transition-all duration-300 group
-              ${selectedStyle === style.id
-                ? 'ring-2 ring-primary shadow-cute bg-gradient-primary/5 scale-105'
-                : 'hover:shadow-soft hover:scale-105 border-2 border-transparent hover:border-primary/20'
-              }
-            `}
-            onClick={() => onStyleSelect(style.id)}
-          >
-            {style.popular && (
-              <Badge 
-                variant="secondary" 
-                className="absolute -top-2 -right-2 bg-gradient-accent text-foreground font-bold animate-float"
-              >
-                Popular
-              </Badge>
-            )}
-            
-            <div className="flex items-start space-x-4">
-              <div className={`
-                p-3 rounded-full transition-all duration-300
-                ${selectedStyle === style.id
-                  ? 'bg-gradient-primary text-primary-foreground animate-bounce-cute'
-                  : 'bg-gradient-secondary text-accent-foreground group-hover:animate-float'
-                }
-              `}>
-                {style.icon}
-              </div>
-              
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-lg">{style.name}</h3>
-                  <span className="text-2xl">{style.preview}</span>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {style.description}
-                </p>
-              </div>
+      <Card className="p-6 max-w-2xl mx-auto">
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Wand2 className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">Custom Style Prompt</h3>
+          </div>
+          
+          <Textarea
+            placeholder="Describe your desired style... e.g., 'Kawaii anime style with big sparkly eyes and pastel colors'"
+            value={customPrompt}
+            onChange={(e) => onPromptChange(e.target.value)}
+            className="min-h-[100px] resize-none"
+          />
+          
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {customPrompt.length}/500 characters
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRandomExample}
+              className="flex items-center space-x-1"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>Random Idea</span>
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-4 max-w-2xl mx-auto bg-gradient-secondary/10">
+        <div className="flex items-start space-x-3">
+          <Lightbulb className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm">💡 Style Examples:</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {promptExamples.map((example, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleExampleClick(example)}
+                  className="text-left text-sm text-muted-foreground hover:text-primary transition-colors p-2 rounded hover:bg-primary/5"
+                >
+                  "{example}"
+                </button>
+              ))}
             </div>
-            
-            {selectedStyle === style.id && (
-              <div className="absolute inset-0 rounded-lg bg-gradient-primary opacity-5 pointer-events-none" />
-            )}
-          </Card>
-        ))}
-      </div>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 };

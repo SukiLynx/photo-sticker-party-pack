@@ -13,7 +13,7 @@ import { Sparkles, Wand2, ArrowRight, ArrowLeft } from 'lucide-react';
 
 interface GenerationState {
   uploadedImage: string | null;
-  selectedStyle: string;
+  customPrompt: string;
   selectedQuantity: number;
   stickerPack: string[];
   isGenerating: boolean;
@@ -25,7 +25,7 @@ export const StickerGenerator: React.FC = () => {
   const { toast } = useToast();
   const [state, setState] = useState<GenerationState>({
     uploadedImage: null,
-    selectedStyle: '',
+    customPrompt: '',
     selectedQuantity: 6,
     stickerPack: [],
     isGenerating: false,
@@ -35,7 +35,7 @@ export const StickerGenerator: React.FC = () => {
 
   const steps = [
     { number: 1, title: 'Upload Photo', description: 'Add your beautiful selfie' },
-    { number: 2, title: 'Choose Style', description: 'Pick your favorite look' },
+    { number: 2, title: 'Describe Style', description: 'Tell us your vision' },
     { number: 3, title: 'Select Quantity', description: 'How many stickers?' },
     { number: 4, title: 'Review & Pay', description: 'Confirm pricing & payment' },
     { number: 5, title: 'Generate & Download', description: 'Get your stickers!' },
@@ -77,17 +77,18 @@ export const StickerGenerator: React.FC = () => {
     setState(prev => ({
       ...prev,
       uploadedImage: null,
+      customPrompt: '',
       currentStep: 1,
       stickerPack: [],
       pricingAccepted: false
     }));
   };
 
-  const handleStyleSelect = (styleId: string) => {
+  const handlePromptChange = (prompt: string) => {
     setState(prev => ({
       ...prev,
-      selectedStyle: styleId,
-      currentStep: Math.max(prev.currentStep, 3),
+      customPrompt: prompt,
+      currentStep: prompt.trim() ? Math.max(prev.currentStep, 3) : prev.currentStep,
       pricingAccepted: false
     }));
   };
@@ -123,7 +124,7 @@ export const StickerGenerator: React.FC = () => {
     }, 2000);
   };
   const handleGenerateStickers = async () => {
-    if (!state.uploadedImage || !state.selectedStyle || !state.pricingAccepted) {
+    if (!state.uploadedImage || !state.customPrompt.trim() || !state.pricingAccepted) {
       toast({
         title: "Missing information",
         description: "Please complete all steps including payment!",
@@ -152,7 +153,7 @@ export const StickerGenerator: React.FC = () => {
 
       toast({
         title: "Stickers generated! 🎉",
-        description: `Your ${state.selectedQuantity} ${state.selectedStyle} stickers are ready!`,
+        description: `Your ${state.selectedQuantity} custom style stickers are ready!`,
       });
     } catch (error) {
       setState(prev => ({ ...prev, isGenerating: false }));
@@ -183,7 +184,7 @@ export const StickerGenerator: React.FC = () => {
   const canProceedToNextStep = () => {
     switch (state.currentStep) {
       case 1: return !!state.uploadedImage;
-      case 2: return !!state.selectedStyle;
+      case 2: return !!state.customPrompt.trim();
       case 3: return state.selectedQuantity > 0;
       case 4: return state.pricingAccepted;
       default: return true;
@@ -280,14 +281,14 @@ export const StickerGenerator: React.FC = () => {
           {state.currentStep >= 2 && state.uploadedImage && (
             <Card className="p-6">
               <StyleSelector
-                selectedStyle={state.selectedStyle}
-                onStyleSelect={handleStyleSelect}
+                customPrompt={state.customPrompt}
+                onPromptChange={handlePromptChange}
               />
             </Card>
           )}
 
           {/* Step 3: Quantity Selection */}
-          {state.currentStep >= 3 && state.selectedStyle && (
+          {state.currentStep >= 3 && state.customPrompt.trim() && (
             <Card className="p-6">
               <QuantitySelector
                 selectedQuantity={state.selectedQuantity}
@@ -297,10 +298,10 @@ export const StickerGenerator: React.FC = () => {
           )}
 
           {/* Step 4: Pricing & Payment */}
-          {state.currentStep >= 4 && state.selectedStyle && state.selectedQuantity && (
+          {state.currentStep >= 4 && state.customPrompt.trim() && state.selectedQuantity && (
             <Card className="p-6">
               <PricingCalculator
-                selectedStyle={state.selectedStyle}
+                customPrompt={state.customPrompt}
                 selectedQuantity={state.selectedQuantity}
                 onAcceptPricing={handleAcceptPricing}
               />
@@ -316,7 +317,7 @@ export const StickerGenerator: React.FC = () => {
                     Payment Confirmed! Ready to Generate? ✨
                   </h2>
                   <p className="text-muted-foreground max-w-md mx-auto">
-                    Your payment has been processed. Click below to generate your {state.selectedQuantity} amazing {state.selectedStyle} stickers.
+                    Your payment has been processed. Click below to generate your {state.selectedQuantity} amazing custom stickers.
                   </p>
                   <Button
                     variant="cute"
@@ -335,7 +336,7 @@ export const StickerGenerator: React.FC = () => {
                 stickerPack={state.stickerPack}
                 onDownload={handleDownload}
                 onShare={handleShare}
-                selectedStyle={state.selectedStyle}
+                selectedStyle="custom"
                 selectedQuantity={state.selectedQuantity}
               />
             </Card>
